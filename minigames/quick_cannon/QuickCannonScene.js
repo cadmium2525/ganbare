@@ -24,6 +24,16 @@ class QuickCannonScene extends MiniGameBase {
         // アニメーション用
         this.idleAnimTimer = 0;
         this.currentIdleFrame = 1;
+
+        // 爆弾アニメーション用
+        this.bombSprite = null;
+        this.explosionSprite = null;
+
+        // プレイヤーアニメーション用
+        this.playerIdleAnimTimer = 0;
+        this.currentPlayerIdleFrame = 1;
+        this.isPlayerPushing = false;
+        this.playerPushAnimTimer = 0;
     }
 
     /**
@@ -89,18 +99,12 @@ class QuickCannonScene extends MiniGameBase {
         this.commandText.setOrigin(0.5);
 
         // プレイヤーキャラクター（左下）
-        this.playerSprite = this.add.rectangle(
+        this.playerSprite = this.add.sprite(
             WIDTH * 0.25,
             HEIGHT * 0.7,
-            150,
-            150,
-            0x42a5f5
+            'player_idle001'
         );
-        this.add.text(WIDTH * 0.25, HEIGHT * 0.8, 'YOU', {
-            fontSize: Constants.FONTS.SIZE_SMALL,
-            color: Constants.COLORS.CHALK_WHITE,
-            fontFamily: Constants.FONTS.MAIN,
-        }).setOrigin(0.5);
+        this.playerSprite.setScale(0.7);
 
         // CPUキャラクター（右下）
         this.cpuSprite = this.add.rectangle(
@@ -117,7 +121,7 @@ class QuickCannonScene extends MiniGameBase {
         }).setOrigin(0.5);
 
         // 説明テキスト（下部）
-        this.instructionText = this.add.text(WIDTH / 2, HEIGHT * 0.9, '「ちんぽ」が表示されたらタップ!', {
+        this.instructionText = this.add.text(WIDTH / 2, HEIGHT * 0.9, '「おちんぽ」が表示されたらタップ!', {
             fontSize: Constants.FONTS.SIZE_SMALL,
             color: Constants.COLORS.CHALK_YELLOW,
             fontFamily: Constants.FONTS.MAIN,
@@ -146,9 +150,16 @@ class QuickCannonScene extends MiniGameBase {
         // UI更新
         this.updateUI();
 
-        // アイドルアニメーション更新（WAIT状態のみ）
-        if (this.gameLogicState.currentState === QuickCannonLogic.STATE.WAIT) {
+        // アイドルアニメーション更新（WAIT状態とFEINT状態）
+        if (this.gameLogicState.currentState === QuickCannonLogic.STATE.WAIT ||
+            this.gameLogicState.currentState === QuickCannonLogic.STATE.FEINT) {
             this.updateIdleAnimation(delta);
+            this.updatePlayerIdleAnimation(delta);
+        }
+
+        // プレイヤープッシュアニメーション更新
+        if (this.isPlayerPushing) {
+            this.updatePlayerPushAnimation(delta);
         }
 
         // 結果判定
@@ -186,7 +197,7 @@ class QuickCannonScene extends MiniGameBase {
                 break;
 
             case QuickCannonLogic.STATE.FIRE:
-                this.commandText.setText('ちんぽ!');
+                this.commandText.setText('おちんぽ!');
                 this.commandText.setColor(Constants.COLORS.CHALK_WHITE);
 
                 // 司会キャラクターをFIRE画像に変更
@@ -207,6 +218,10 @@ class QuickCannonScene extends MiniGameBase {
                 if (state.isCPUShooted) {
                     this.cpuSprite.setFillStyle(0xff9800);
                 }
+                break;
+
+            case QuickCannonLogic.STATE.BOMB_ANIMATION:
+                this.updateBombAnimation(state);
                 break;
         }
     }
@@ -233,6 +248,159 @@ class QuickCannonScene extends MiniGameBase {
     }
 
     /**
+     * プレイヤーアイドルアニメーション更新
+     */
+    updatePlayerIdleAnimation(delta) {
+        // プッシュ中は実行しない
+        if (this.isPlayerPushing) {
+            return;
+        }
+
+        // 500msごとにフレームを切り替え
+        this.playerIdleAnimTimer += delta;
+
+        if (this.playerIdleAnimTimer >= 500) {
+            this.playerIdleAnimTimer = 0;
+
+            // フレームを切り替え
+            if (this.currentPlayerIdleFrame === 1) {
+                this.playerSprite.setTexture('player_idle002');
+                this.currentPlayerIdleFrame = 2;
+            } else {
+                this.playerSprite.setTexture('player_idle001');
+                this.currentPlayerIdleFrame = 1;
+            }
+        }
+    }
+
+    /**
+     * プレイヤープッシュアニメーション開始
+     */
+    playPlayerPushAnimation() {
+        this.isPlayerPushing = true;
+        this.playerPushAnimTimer = 0;
+        this.playerSprite.setTexture('player_push001');
+    }
+
+    /**
+     * プレイヤープッシュアニメーション更新
+     */
+    updatePlayerPushAnimation(delta) {
+        this.playerPushAnimTimer += delta;
+
+        // 200msでフレーム切り替え
+        if (this.playerPushAnimTimer >= 200 && this.playerPushAnimTimer < 1400) {
+            this.playerSprite.setTexture('player_push002');
+        }
+        // 1400msでアニメーション完了、アイドルに戻る
+        else if (this.playerPushAnimTimer >= 1400) {
+            this.isPlayerPushing = false;
+            this.playerPushAnimTimer = 0;
+            this.playerSprite.setTexture('player_idle001');
+            this.currentPlayerIdleFrame = 1;
+        }
+    }
+
+    /**
+     * 爆弾アニメーション更新
+     */
+    updateBombAnimation(state) {
+        const { WIDTH, HEIGHT } = Constants.GAME;
+        const now = Date.now();
+
+        // アニメーション開始時の初期化
+        if (state.bombAnimationPhase === 'none') {
+            state.bombAnimationStartTime = now;
+            state.bombAnimationPhase = 'falling';
+            state.explosionFrame = 0;
+
+            // 爆弾スプライトを作成（画面上部、司会者の横）
+            this.bombSprite = this.add.sprite(
+                this.hostSprite.x - 50,
+                -100,
+                'bomb'
+            );
+            this.bombSprite.setScale(0.3);
+        }
+
+        const elapsed = now - state.bombAnimationStartTime;
+
+        // プレイヤープッシュアニメーション完了を待つ（1400ms遅延）
+        const pushAnimationDelay = 1400;
+
+        // フェーズ1: 爆弾が落下（1400-2200ms）
+        if (state.bombAnimationPhase === 'falling') {
+            // 遅延時間が経過するまで待機
+            if (elapsed < pushAnimationDelay) {
+                return;
+            }
+
+            const fallDuration = 800;
+            const fallElapsed = elapsed - pushAnimationDelay;
+            const progress = Math.min(fallElapsed / fallDuration, 1);
+
+            // 落下アニメーション（イージング付き）
+            const targetY = this.hostSprite.y;
+            const easing = progress * progress; // 加速
+            this.bombSprite.y = -100 + (targetY + 100) * easing;
+
+            if (progress >= 1) {
+                state.bombAnimationPhase = 'exploding';
+                state.explosionFrame = 0;
+
+                // 爆弾スプライトを非表示
+                this.bombSprite.setVisible(false);
+
+                // 爆発スプライトを作成
+                this.explosionSprite = this.add.sprite(
+                    this.hostSprite.x - 50,
+                    this.hostSprite.y,
+                    'bomb000'
+                );
+                this.explosionSprite.setScale(0.4);
+
+                // 爆発SE再生
+                this.soundManager.playSE('se_success');
+            }
+        }
+        // フェーズ2: 爆発アニメーション（2200-2800ms）
+        else if (state.bombAnimationPhase === 'exploding') {
+            const explosionStartTime = pushAnimationDelay + 800; // 1400 + 800 = 2200ms
+            const explosionElapsed = elapsed - explosionStartTime;
+            const frameTime = 200; // 各フレーム200ms
+
+            const frame = Math.floor(explosionElapsed / frameTime);
+
+            if (frame !== state.explosionFrame && frame < 3) {
+                state.explosionFrame = frame;
+                const textures = ['bomb000', 'bomb001', 'bomb002'];
+                this.explosionSprite.setTexture(textures[frame]);
+            }
+
+            if (explosionElapsed >= frameTime * 3) {
+                state.bombAnimationPhase = 'burning';
+
+                // 爆発スプライトを非表示
+                this.explosionSprite.setVisible(false);
+
+                // 司会者を燃えた状態に変更
+                this.hostSprite.setTexture('announcer_fire01');
+            }
+        }
+        // フェーズ3: 燃えた状態を表示（2800-4800ms）
+        else if (state.bombAnimationPhase === 'burning') {
+            const burningStartTime = pushAnimationDelay + 800 + 600; // 1400 + 800 + 600 = 2800ms
+            const burningElapsed = elapsed - burningStartTime;
+            const burningDuration = 2000; // 2秒間表示
+
+            if (burningElapsed >= burningDuration) {
+                // アニメーション完了、リザルトへ
+                state.currentState = QuickCannonLogic.STATE.RESULT;
+            }
+        }
+    }
+
+    /**
      * タップ処理
      */
     onTap(tapInfo) {
@@ -246,11 +414,22 @@ class QuickCannonScene extends MiniGameBase {
         // SE再生
         this.soundManager.playSE('se_shoot');
 
-        // 失敗の場合は即座に終了
+        // プレイヤープッシュアニメーションを開始
+        this.playPlayerPushAnimation();
+
+        // 失敗の場合はアニメーション完了後に終了
         if (!result.success) {
             this.messageText.setText(result.reason);
             this.messageText.setColor(Constants.COLORS.CHALK_RED);
-            this.finish(false);
+
+            // プッシュアニメーション完了後に終了（1400ms後）
+            this.time.delayedCall(1400, () => {
+                this.finish(false);
+            });
+        } else {
+            // 成功の場合は爆弾アニメーション状態へ遷移
+            this.gameLogicState.currentState = QuickCannonLogic.STATE.BOMB_ANIMATION;
+            this.gameLogicState.bombAnimationPhase = 'none';
         }
     }
 

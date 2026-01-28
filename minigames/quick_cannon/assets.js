@@ -14,13 +14,22 @@ const QuickCannonAssets = {
         announcer_idle02: 'minigames/quick_cannon/assets/characters/announcer/announcer_idle02.png',
         announcer_fake: 'minigames/quick_cannon/assets/characters/announcer/announcer_fake.png',
         announcer_fire: 'minigames/quick_cannon/assets/characters/announcer/announcer_fire.png',
+        announcer_fire01: 'minigames/quick_cannon/assets/characters/announcer/announcer_fire01.png',
+
+        // 爆弾
+        bomb: 'minigames/quick_cannon/assets/bomb/bomb.png',
+        bomb000: 'minigames/quick_cannon/assets/bomb/bomb000.png',
+        bomb001: 'minigames/quick_cannon/assets/bomb/bomb001.png',
+        bomb002: 'minigames/quick_cannon/assets/bomb/bomb002.png',
 
         // UI要素
         fukidashi: 'minigames/quick_cannon/assets/characters/announcer/fukidashi.png',
 
         // プレイヤーキャラクター
-        player_idle: 'minigames/quick_cannon/assets/player_idle.png',
-        player_shoot: 'minigames/quick_cannon/assets/player_shoot.png',
+        player_idle001: 'minigames/quick_cannon/assets/characters/player/player_idle001.png',
+        player_idle002: 'minigames/quick_cannon/assets/characters/player/player_idle002.png',
+        player_push001: 'minigames/quick_cannon/assets/characters/player/player_push001.png',
+        player_push002: 'minigames/quick_cannon/assets/characters/player/player_push002.png',
 
         // CPUキャラクター
         cpu_idle: 'minigames/quick_cannon/assets/cpu_idle.png',

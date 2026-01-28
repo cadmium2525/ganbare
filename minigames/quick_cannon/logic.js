@@ -12,6 +12,7 @@ const QuickCannonLogic = {
         WAIT: 'wait',           // 待機中
         FEINT: 'feint',         // フェイント表示中
         FIRE: 'fire',           // FIRE表示中
+        BOMB_ANIMATION: 'bomb_animation', // 爆弾アニメーション中
         RESULT: 'result',       // 結果表示中
     },
 
@@ -46,6 +47,9 @@ const QuickCannonLogic = {
             fireStartTime: null,
             isPlayerShooted: false,
             isCPUShooted: false,
+            bombAnimationStartTime: null,
+            bombAnimationPhase: 'none', // 'none', 'falling', 'exploding', 'burning'
+            explosionFrame: 0,
         };
     },
 
@@ -193,10 +197,22 @@ const QuickCannonLogic = {
                     this.executeCPUShoot(state);
                 }
 
-                // FIRE表示時間経過で結果へ
-                if (now - state.fireStartTime >= Constants.QUICK_CANNON.FIRE_DISPLAY_MS) {
-                    state.currentState = this.STATE.RESULT;
+                // プレイヤーがタップ成功した場合は爆弾アニメーションへ
+                if (state.isPlayerShooted && !state.isCPUShooted) {
+                    // タップ成功時は爆弾アニメーションへ遷移
+                    // この遷移はonTap側で処理される
                 }
+
+                // FIRE表示時間経過で結果へ（タップしなかった場合）
+                if (now - state.fireStartTime >= Constants.QUICK_CANNON.FIRE_DISPLAY_MS) {
+                    if (!state.isPlayerShooted) {
+                        state.currentState = this.STATE.RESULT;
+                    }
+                }
+                break;
+
+            case this.STATE.BOMB_ANIMATION:
+                // 爆弾アニメーションの進行は QuickCannonScene で管理
                 break;
         }
 
