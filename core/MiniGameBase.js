@@ -31,6 +31,9 @@ class MiniGameBase extends Phaser.Scene {
         this.soundManager = new SoundManager(this);
         this.inputManager = new InputManager(this);
 
+        // シャットダウンイベントの登録
+        this.events.on('shutdown', this.shutdown, this);
+
         // 共通UI作成
         this.createCommonUI();
 

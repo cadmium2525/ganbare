@@ -13,6 +13,7 @@ class SoundManager {
         this.isMuted = false;
         this.bgmVolume = 0.5;
         this.seVolume = 0.7;
+        this.currentBGMKey = null;
     }
 
     /**
@@ -21,17 +22,41 @@ class SoundManager {
      * @param {boolean} loop - ループ再生するか
      */
     playBGM(key, loop = true) {
-        // 既存のBGMを停止
-        if (this.bgm) {
-            this.bgm.stop();
+        // 同じBGMが既に存在する場合
+        if (this.currentBGMKey === key && this.bgm) {
+            if (this.bgm.isPaused) {
+                console.log(`[SoundManager] Resuming BGM: ${key}`);
+                this.bgm.resume();
+                return;
+            } else if (this.bgm.isPlaying) {
+                console.log(`[SoundManager] BGM already playing: ${key}`);
+                return;
+            }
         }
 
+        // 既存のBGMを停止
+        this.stopBGM();
+
+        // 同じキーの他のサウンドインスタンスも念のため停止（重複防止）
+        this.scene.sound.getAll(key).forEach(sound => {
+            console.log(`[SoundManager] Stopping duplicate BGM: ${key}`);
+            sound.stop();
+            sound.destroy();
+        });
+
         // 新しいBGMを再生
-        if (this.scene.sound.get(key)) {
-            this.bgm = this.scene.sound.play(key, {
+        console.log(`[SoundManager] Attempting to play BGM: ${key}`);
+        try {
+            this.bgm = this.scene.sound.add(key, {
                 loop: loop,
                 volume: this.isMuted ? 0 : this.bgmVolume,
             });
+            this.bgm.play();
+            this.currentBGMKey = key;
+            console.log(`[SoundManager] Playing BGM: ${key}`);
+        } catch (error) {
+            console.error(`[SoundManager] Failed to play BGM: ${key}`, error);
+            this.currentBGMKey = null;
         }
     }
 
@@ -39,9 +64,23 @@ class SoundManager {
      * BGMを停止
      */
     stopBGM() {
+        // 現在管理中のBGMを停止
         if (this.bgm) {
-            this.bgm.stop();
+            if (typeof this.bgm.stop === 'function') {
+                this.bgm.stop();
+            }
             this.bgm = null;
+            this.currentBGMKey = null;
+        }
+    }
+
+    /**
+     * BGMを一時停止
+     */
+    pauseBGM() {
+        if (this.bgm && this.bgm.isPlaying) {
+            console.log(`[SoundManager] Pausing BGM: ${this.currentBGMKey}`);
+            this.bgm.pause();
         }
     }
 

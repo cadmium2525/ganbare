@@ -30,10 +30,13 @@ const QuickCannonAssets = {
         player_idle002: 'minigames/quick_cannon/assets/characters/player/player_idle002.png',
         player_push001: 'minigames/quick_cannon/assets/characters/player/player_push001.png',
         player_push002: 'minigames/quick_cannon/assets/characters/player/player_push002.png',
+        player_fail: 'minigames/quick_cannon/assets/characters/player/player_fail.png',
 
         // CPUキャラクター
-        cpu_idle: 'minigames/quick_cannon/assets/cpu_idle.png',
-        cpu_shoot: 'minigames/quick_cannon/assets/cpu_shoot.png',
+        enemy_idle01: 'minigames/quick_cannon/assets/characters/enemy/enemy_idle01.png',
+        enemy_idle02: 'minigames/quick_cannon/assets/characters/enemy/enemy_idle02.png',
+        enemy_push01: 'minigames/quick_cannon/assets/characters/enemy/enemy_push01.png',
+        enemy_push02: 'minigames/quick_cannon/assets/characters/enemy/enemy_push02.png',
 
         // 背景要素
         background: 'minigames/quick_cannon/assets/background.png',
@@ -42,7 +45,8 @@ const QuickCannonAssets = {
     // 音声アセット
     sounds: {
         // BGM
-        bgm_quickcannon: 'minigames/quick_cannon/assets/bgm_quickcannon.mp3',
+        bgm_quickcannon: 'minigames/quick_cannon/assets/bgm/bgm_quickcannon.mp3',
+        bgm_happytime: 'minigames/quick_cannon/assets/bgm/happytime.mp3',
 
         // SE
         se_countdown: 'minigames/quick_cannon/assets/se_countdown.mp3',

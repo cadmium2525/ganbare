@@ -29,9 +29,9 @@ const Constants = {
         FEINT_MAX_COUNT: 5,          // フェイント最大回数
         FEINT_DURATION_MS: 800,      // フェイント表示時間
         FIRE_DISPLAY_MS: 2000,       // FIRE表示時間
-        CPU_REACTION_MIN_MS: 600,    // CPU反応最小時間
-        CPU_REACTION_MAX_MS: 1200,   // CPU反応最大時間
-        CPU_SHOOT_PROBABILITY: 0.7,  // CPU射撃確率
+        CPU_REACTION_MIN_MS: 300,    // CPU反応最小時間
+        CPU_REACTION_MAX_MS: 600,    // CPU反応最大時間
+        CPU_SHOOT_PROBABILITY: 0.8,  // CPU射撃確率（少し上げる）
     },
 
     // アセットパス

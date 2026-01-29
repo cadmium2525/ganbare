@@ -25,7 +25,7 @@ const QuickCannonLogic = {
         'ももぉ',
         'やほ',
         'ドラだよぉ',
-        'やほほい',
+        'おさんぽ！',
     ],
 
     /**
@@ -50,6 +50,8 @@ const QuickCannonLogic = {
             bombAnimationStartTime: null,
             bombAnimationPhase: 'none', // 'none', 'falling', 'exploding', 'burning'
             explosionFrame: 0,
+            bombTarget: 'announcer', // 'announcer' or 'player'
+            waitForPlayerAnim: false, // プレイヤーのアニメーション待機フラグ
         };
     },
 
@@ -110,6 +112,7 @@ const QuickCannonLogic = {
             return {
                 success: false,
                 reason: 'フライング！',
+                isFlying: true, // フライングフラグ
             };
         }
 
@@ -146,6 +149,12 @@ const QuickCannonLogic = {
     executeCPUShoot(state) {
         state.isCPUShooted = true;
         state.cpuShootTime = Date.now();
+
+        // CPUが勝った場合、プレイヤーに爆弾を落とすためにアニメーション状態へ遷移
+        state.currentState = this.STATE.BOMB_ANIMATION;
+        state.bombAnimationPhase = 'none';
+        state.bombTarget = 'player';
+        state.waitForPlayerAnim = false; // CPU勝利時はプレイヤー動作を待たない
     },
 
     /**
@@ -201,8 +210,8 @@ const QuickCannonLogic = {
                 if (state.isPlayerShooted && !state.isCPUShooted) {
                     // タップ成功時は爆弾アニメーションへ遷移
                     // この遷移はonTap側で処理される
+                    // state.bombTarget = 'announcer'; // デフォルトは司会者
                 }
-
                 // FIRE表示時間経過で結果へ（タップしなかった場合）
                 if (now - state.fireStartTime >= Constants.QUICK_CANNON.FIRE_DISPLAY_MS) {
                     if (!state.isPlayerShooted) {
