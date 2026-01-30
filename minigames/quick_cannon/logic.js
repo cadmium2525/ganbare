@@ -52,6 +52,8 @@ const QuickCannonLogic = {
             explosionFrame: 0,
             bombTarget: 'announcer', // 'announcer' or 'player'
             waitForPlayerAnim: false, // プレイヤーのアニメーション待機フラグ
+            willCPUShoot: false, // 今回CPUが撃つかどうか（事前計算）
+            cpuReactionDelay: 0, // CPUの反応時間（事前計算）
         };
     },
 
@@ -92,11 +94,13 @@ const QuickCannonLogic = {
             return false;
         }
 
-        const { CPU_SHOOT_PROBABILITY, CPU_REACTION_MIN_MS, CPU_REACTION_MAX_MS } = Constants.QUICK_CANNON;
-        const elapsed = Date.now() - state.fireStartTime;
-        const reactionTime = Math.floor(Math.random() * (CPU_REACTION_MAX_MS - CPU_REACTION_MIN_MS)) + CPU_REACTION_MIN_MS;
+        // 事前計算された値を使用
+        if (!state.willCPUShoot) {
+            return false;
+        }
 
-        return elapsed >= reactionTime && Math.random() < CPU_SHOOT_PROBABILITY;
+        const elapsed = Date.now() - state.fireStartTime;
+        return elapsed >= state.cpuReactionDelay;
     },
 
     /**
@@ -106,6 +110,27 @@ const QuickCannonLogic = {
      */
     handlePlayerTap(state) {
         const now = Date.now();
+
+        // CPUが既に勝利している（爆弾アニメーション中など）場合
+        // 後出しタップとして扱う（アニメーションのみ再生するため）
+        if (state.currentState === this.STATE.BOMB_ANIMATION || state.isCPUShooted) {
+            // 既にプレイヤーが入力済みなら無視
+            if (state.isPlayerShooted) {
+                return {
+                    success: false,
+                    reason: '無効なタップ',
+                };
+            }
+
+            state.isPlayerShooted = true;
+            state.playerShootTime = now;
+
+            return {
+                success: false,
+                reason: 'CPUの方が早かった...',
+                isLate: true, // 後出しフラグ
+            };
+        }
 
         // WAIT中またはFEINT中のタップは失敗
         if (state.currentState === this.STATE.WAIT || state.currentState === this.STATE.FEINT) {
@@ -173,6 +198,11 @@ const QuickCannonLogic = {
                     if (state.shouldFireNext) {
                         state.currentState = this.STATE.FIRE;
                         state.fireStartTime = now;
+
+                        // CPUの行動を事前計算
+                        const { CPU_SHOOT_PROBABILITY, CPU_REACTION_MIN_MS, CPU_REACTION_MAX_MS } = Constants.QUICK_CANNON;
+                        state.willCPUShoot = Math.random() < CPU_SHOOT_PROBABILITY;
+                        state.cpuReactionDelay = Math.floor(Math.random() * (CPU_REACTION_MAX_MS - CPU_REACTION_MIN_MS)) + CPU_REACTION_MIN_MS;
                     } else {
                         // フェイントへ
                         state.currentState = this.STATE.FEINT;
@@ -222,6 +252,15 @@ const QuickCannonLogic = {
 
             case this.STATE.BOMB_ANIMATION:
                 // 爆弾アニメーションの進行は QuickCannonScene で管理
+
+                // プレイヤーが勝った場合でも、CPUの反応時間が来たら「撃った」ことにする（アニメーション用）
+                if (state.willCPUShoot && !state.isCPUShooted) {
+                    const elapsed = now - state.fireStartTime;
+                    if (elapsed >= state.cpuReactionDelay) {
+                        state.isCPUShooted = true;
+                        // 注意: ここでstate.currentState等は変更しない（既に結果は出ているため）
+                    }
+                }
                 break;
         }
 

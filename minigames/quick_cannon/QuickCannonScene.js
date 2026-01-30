@@ -176,6 +176,8 @@ class QuickCannonScene extends MiniGameBase {
         }
 
         // CPU射撃判定 & アニメーション開始
+        // state.isCPUShooted が true になったら、まだプッシュ中でなければアニメーション開始
+        // （タイミングが遅くても、state側でisCPUShootedが立てばここで検知される）
         if (this.gameLogicState.isCPUShooted && !this.isCpuPushing && this.cpuPushAnimTimer === 0) {
             this.playCpuPushAnimation();
         }
@@ -389,11 +391,10 @@ class QuickCannonScene extends MiniGameBase {
         const elapsed = now - state.bombAnimationStartTime;
 
         // プレイヤープッシュアニメーション完了を待つ（1400ms遅延）
-        // プレイヤーがアクションしていない（CPU勝利で何もしなかった）場合は短縮
+        // ターゲットがプレイヤー（＝CPU勝利）の場合は、プレイヤーの動作に関わらずすぐに落とす
         let pushAnimationDelay = 1400;
-        // プレイヤーがプッシュ動作をしていない、かつターゲットがプレイヤー（＝CPU勝利）の場合
-        if (state.bombTarget === 'player' && !this.isPlayerPushing) {
-            pushAnimationDelay = 200; // すぐに落とす
+        if (state.bombTarget === 'player') {
+            pushAnimationDelay = 200;
         }
 
         // フェーズ1: 爆弾が落下（1400-2200ms）
@@ -533,6 +534,14 @@ class QuickCannonScene extends MiniGameBase {
 
         // 失敗の場合はアニメーション完了後に終了
         if (!result.success) {
+            // 後出し（既に勝負がついている）の場合は、メッセージだけ出して終了処理はしない
+            // （爆弾アニメーションが進行中のはず）
+            if (result.isLate) {
+                this.messageText.setText(result.reason);
+                this.messageText.setColor(Constants.COLORS.CHALK_RED);
+                return;
+            }
+
             this.messageText.setText(result.reason);
             this.messageText.setColor(Constants.COLORS.CHALK_RED);
 
