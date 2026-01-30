@@ -258,6 +258,7 @@ const QuickCannonLogic = {
                     const elapsed = now - state.fireStartTime;
                     if (elapsed >= state.cpuReactionDelay) {
                         state.isCPUShooted = true;
+                        state.cpuShootTime = state.fireStartTime + state.cpuReactionDelay;
                         // 注意: ここでstate.currentState等は変更しない（既に結果は出ているため）
                     }
                 }

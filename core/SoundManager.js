@@ -89,10 +89,13 @@ class SoundManager {
      * @param {string} key - サウンドキー
      */
     playSE(key) {
-        if (this.scene.sound.get(key)) {
+        // 音がキャッシュにあるか確認してから再生（存在しないとエラーになる場合があるため）
+        if (this.scene.cache.audio.exists(key)) {
             this.scene.sound.play(key, {
                 volume: this.isMuted ? 0 : this.seVolume,
             });
+        } else {
+            console.warn(`[SoundManager] SE not found: ${key}`);
         }
     }
 

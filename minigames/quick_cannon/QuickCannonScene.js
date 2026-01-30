@@ -84,7 +84,7 @@ class QuickCannonScene extends MiniGameBase {
         // 吹き出し（左側）
         this.fukidashiSprite = this.add.sprite(
             WIDTH * 0.32,
-            HEIGHT * 0.2,
+            HEIGHT * 0.25,
             'fukidashi'
         );
         this.fukidashiSprite.setScale(0.85); // サイズを少し小さく
@@ -92,13 +92,13 @@ class QuickCannonScene extends MiniGameBase {
         // 司会キャラクター（右側）
         this.hostSprite = this.add.sprite(
             WIDTH * 0.77,
-            HEIGHT * 0.2,
+            HEIGHT * 0.25,
             'announcer_idle01'
         );
         this.hostSprite.setScale(0.6); // サイズを小さく
 
         // コマンド表示テキスト（吹き出しの中央）
-        this.commandText = this.add.text(WIDTH * 0.32, HEIGHT * 0.2, '', {
+        this.commandText = this.add.text(WIDTH * 0.32, HEIGHT * 0.25, '', {
             fontSize: Constants.FONTS.SIZE_LARGE,
             color: Constants.COLORS.CHALK_WHITE,
             fontFamily: Constants.FONTS.MAIN,
@@ -109,18 +109,25 @@ class QuickCannonScene extends MiniGameBase {
         // プレイヤーキャラクター（左下）
         this.playerSprite = this.add.sprite(
             WIDTH * 0.25,
-            HEIGHT * 0.7,
+            HEIGHT * 0.85 + 13, // 隙間をなくすために少し下げる
             'player_idle001'
         );
+        this.playerSprite.setOrigin(0.5, 1); // 足元を基準に
         this.playerSprite.setScale(0.7);
 
         // CPUキャラクター（右下）
         this.cpuSprite = this.add.sprite(
             WIDTH * 0.75,
-            HEIGHT * 0.7,
+            HEIGHT * 0.85 + 13, // 隙間をなくすために少し下げる
             'enemy_idle01'
         );
+        this.cpuSprite.setOrigin(0.5, 1); // 足元を基準に
         this.cpuSprite.setScale(0.7);
+
+        // 仕切り線（プレイヤーとCPUの下）
+        this.lineSprite = this.add.sprite(WIDTH / 2, HEIGHT * 0.85, 'line');
+        this.lineSprite.displayWidth = WIDTH; // 横幅いっぱいに
+
 
         // 説明テキスト（下部）
         this.instructionText = this.add.text(WIDTH / 2, HEIGHT * 0.9, '「おちんぽ」が表示されたらタップ!', {
@@ -372,7 +379,8 @@ class QuickCannonScene extends MiniGameBase {
 
             if (state.bombTarget === 'player') {
                 targetX = this.playerSprite.x;
-                targetY = this.playerSprite.y;
+                // 足元基準になったので、中心付近をターゲットにする
+                targetY = this.playerSprite.y - (this.playerSprite.displayHeight / 2);
             } else {
                 // デフォルト（司会者）
                 targetX = this.hostSprite.x;
@@ -411,7 +419,7 @@ class QuickCannonScene extends MiniGameBase {
             // 落下アニメーション（イージング付き）
             let targetY;
             if (state.bombTarget === 'player') {
-                targetY = this.playerSprite.y;
+                targetY = this.playerSprite.y - (this.playerSprite.displayHeight / 2);
             } else {
                 targetY = this.hostSprite.y;
             }
@@ -437,9 +445,9 @@ class QuickCannonScene extends MiniGameBase {
                 // 爆発SE再生
                 if (state.bombTarget === 'player') {
                     // プレイヤーの場合も爆発音は同じ、その後失敗音
-                    this.soundManager.playSE('se_success');
+                    this.soundManager.playSE('se_explosion');
                 } else {
-                    this.soundManager.playSE('se_success');
+                    this.soundManager.playSE('se_explosion');
                 }
             }
         }

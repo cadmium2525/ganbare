@@ -40,6 +40,8 @@ const QuickCannonAssets = {
 
         // 背景要素
         background: 'minigames/quick_cannon/assets/background.png',
+        // 仕切り線
+        line: 'minigames/quick_cannon/assets/line/line.png',
     },
 
     // 音声アセット
@@ -54,6 +56,7 @@ const QuickCannonAssets = {
         se_shoot: 'minigames/quick_cannon/assets/se_shoot.mp3',
         se_success: 'minigames/quick_cannon/assets/se_success.mp3',
         se_fail: 'minigames/quick_cannon/assets/se_fail.mp3',
+        se_explosion: 'minigames/quick_cannon/assets/se/explosion.mp3',
     },
 
     /**
