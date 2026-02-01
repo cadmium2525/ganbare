@@ -39,9 +39,13 @@ const QuickCannonAssets = {
         enemy_push02: 'minigames/quick_cannon/assets/characters/enemy/enemy_push02.png',
 
         // 背景要素
-        background: 'minigames/quick_cannon/assets/background.png',
+        background: 'minigames/quick_cannon/assets/bg/bg.png',
         // 仕切り線
         line: 'minigames/quick_cannon/assets/line/line.png',
+        // ライフアイコン
+        life: 'minigames/assets/life/life.png',
+        // ゲームオーバー
+        gameover: 'minigames/assets/gameover/gameover.png',
     },
 
     // 音声アセット

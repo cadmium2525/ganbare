@@ -22,6 +22,7 @@ class QuickCannonScene extends MiniGameBase {
         this.cpuSprite = null;
         this.commandText = null;
         this.instructionText = null;
+        this.lifeSprites = []; // 残機表示用スプライト配列
 
         // アニメーション用
         this.idleAnimTimer = 0;
@@ -78,8 +79,17 @@ class QuickCannonScene extends MiniGameBase {
     createUI() {
         const { WIDTH, HEIGHT } = Constants.GAME;
 
-        // 背景（黒板）
-        this.add.rectangle(0, 0, WIDTH, HEIGHT, 0x2d5016).setOrigin(0);
+        // 背景（新しいbg.pngを使用）
+        const bg = this.add.image(WIDTH / 2, HEIGHT / 2, 'background');
+        // 画面サイズに合わせてスケーリング (アスペクト比維持)
+        const scaleX = WIDTH / bg.width;
+        const scaleY = HEIGHT / bg.height;
+        const scale = Math.max(scaleX, scaleY);
+        bg.setScale(scale);
+
+        // 上部ライン (line.png)
+        const topLine = this.add.image(WIDTH / 2, 70, 'line');
+        topLine.displayWidth = WIDTH;
 
         // 吹き出し（左側）
         this.fukidashiSprite = this.add.sprite(
@@ -89,10 +99,10 @@ class QuickCannonScene extends MiniGameBase {
         );
         this.fukidashiSprite.setScale(0.85); // サイズを少し小さく
 
-        // 司会キャラクター（右側）
+        // 司会キャラクター（右側）- 位置を下げる
         this.hostSprite = this.add.sprite(
             WIDTH * 0.77,
-            HEIGHT * 0.25,
+            HEIGHT * 0.35, // 0.25 -> 0.35 に変更
             'announcer_idle01'
         );
         this.hostSprite.setScale(0.6); // サイズを小さく
@@ -105,6 +115,9 @@ class QuickCannonScene extends MiniGameBase {
             fontStyle: 'bold',
         });
         this.commandText.setOrigin(0.5);
+
+        // 残機表示（ヘッダー）
+        this.createLifeIndicators();
 
         // プレイヤーキャラクター（左下）
         this.playerSprite = this.add.sprite(
@@ -129,17 +142,40 @@ class QuickCannonScene extends MiniGameBase {
         this.lineSprite.displayWidth = WIDTH; // 横幅いっぱいに
 
 
-        // 説明テキスト（下部）
-        this.instructionText = this.add.text(WIDTH / 2, HEIGHT * 0.9, '「おちんぽ」が表示されたらタップ!', {
-            fontSize: Constants.FONTS.SIZE_SMALL,
-            color: Constants.COLORS.CHALK_YELLOW,
-            fontFamily: Constants.FONTS.MAIN,
-        });
-        this.instructionText.setOrigin(0.5);
+        // 説明テキスト（下部）は削除し、start()で生成する
+        // this.instructionText = ...
 
         // タイマーテキストを非表示（QuickCannonでは使わない）
         if (this.timerText) {
             this.timerText.setVisible(false);
+        }
+    }
+
+    /**
+     * 残機表示を作成
+     */
+    createLifeIndicators() {
+        const { WIDTH } = Constants.GAME;
+        const currentLives = window.gameManager ? window.gameManager.lives : 3;
+        this.lifeSprites = [];
+
+        // 3つの残機を表示（左上に配置変更）
+        // 間隔調整
+        const startX = 40; // 左端からのマージン
+        const y = 40;
+        const spacing = 80; // 間隔を狭める
+
+        for (let i = 0; i < 3; i++) {
+            const life = this.add.image(startX + (i * spacing), y, 'life');
+            life.setScale(0.2); // サイズ調整
+
+            // 現在のライフ数より多い分は半透明にするなどの表現
+            if (i >= currentLives) {
+                life.setAlpha(0.3);
+                life.setTint(0x000000); // 減った分は暗くする
+            }
+
+            this.lifeSprites.push(life);
         }
     }
 
@@ -586,6 +622,11 @@ class QuickCannonScene extends MiniGameBase {
      * ゲーム開始（オーバーライド）
      */
     start() {
+        // バグ修正: startが呼ばれた瞬間に入力を無効化する。
+        // これにより、「Tap to Start」を押した際のpointerdownイベントが
+        // 遅れてInputManagerに伝播しても、InputManager側で無視される。
+        this.inputManager.disable();
+
         // スタート待機状態
         this.gameState = Constants.GAME_STATE.READY;
 
@@ -598,6 +639,15 @@ class QuickCannonScene extends MiniGameBase {
             fontStyle: 'bold',
         }).setOrigin(0.5);
         this.tapToStartText.setDepth(100);
+
+        // 説明テキスト（Tap to Startの下）
+        this.instructionText = this.add.text(WIDTH / 2, HEIGHT / 2 + 50, '「おちんぽ」が表示されたらタップ!', {
+            fontSize: Constants.FONTS.SIZE_SMALL,
+            color: Constants.COLORS.CHALK_YELLOW,
+            fontFamily: Constants.FONTS.MAIN,
+        });
+        this.instructionText.setOrigin(0.5);
+        this.instructionText.setDepth(100);
 
         // 画面全体を覆うインタラクティブなゾーンを作成（確実な入力検知のため）
         const startZone = this.add.zone(0, 0, WIDTH, HEIGHT)
@@ -613,6 +663,9 @@ class QuickCannonScene extends MiniGameBase {
 
             // テキスト非表示
             this.tapToStartText.setVisible(false);
+            if (this.instructionText) {
+                this.instructionText.setVisible(false);
+            }
 
             // ゾーンを破棄
             startZone.destroy();
@@ -627,6 +680,13 @@ class QuickCannonScene extends MiniGameBase {
 
             // 初回のUI更新
             this.updateUI();
+
+            // バグ修正: 即座に入力を受け付けると「Tap to Start」のアップイベントなどが
+            // 誤ってゲームプレイのタップとして検知される場合があるため、少し遅延させる
+            this.inputManager.disable();
+            this.time.delayedCall(500, () => {
+                this.inputManager.enable();
+            });
         });
     }
 

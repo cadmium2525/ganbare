@@ -73,7 +73,16 @@ class ResultScene extends Phaser.Scene {
 
         // クリックイベント
         buttonBg.on('pointerdown', () => {
-            this.onButtonClick();
+            // インタラクティブ有効時のみ反応（初期は無効）
+            if (buttonBg.input.enabled) {
+                this.onButtonClick();
+            }
+        });
+
+        // 誤操作防止のため、最初は入力を無効化し、1秒後に有効化
+        buttonBg.disableInteractive();
+        this.time.delayedCall(1000, () => {
+            buttonBg.setInteractive({ useHandCursor: true });
         });
     }
 
@@ -82,13 +91,15 @@ class ResultScene extends Phaser.Scene {
      */
     onButtonClick() {
         if (this.success) {
-            // 成功時: 次のミニゲームへ（現在はリスタート）
+            // 成功時: 次のミニゲームへ
             if (window.gameManager) {
-                window.gameManager.startGame();
+                window.gameManager.next();
             }
         } else {
-            // 失敗時: もう一度挑戦
-            this.scene.start('QuickCannonScene');
+            // 失敗時: もう一度挑戦（リトライ）
+            if (window.gameManager) {
+                window.gameManager.retry();
+            }
         }
     }
 }

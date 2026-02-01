@@ -14,6 +14,7 @@ class GameManager {
         this.totalGames = 0;
         this.successCount = 0;
         this.failCount = 0;
+        this.lives = 3;
 
         // グローバルアクセス用
         window.gameManager = this;
@@ -42,6 +43,7 @@ class GameManager {
         this.totalGames = 0;
         this.successCount = 0;
         this.failCount = 0;
+        this.lives = 3;
 
         // シャッフル（ランダム順序）
         this.shuffleMiniGames();
@@ -101,6 +103,33 @@ class GameManager {
     }
 
     /**
+     * 失敗報告（残機減少）
+     * @returns {boolean} ゲームオーバーかどうか
+     */
+    reportFailure() {
+        this.lives--;
+        console.log(`Lives remaining: ${this.lives}`);
+        return this.lives <= 0;
+    }
+
+    /**
+     * 現在のミニゲームをリトライ
+     */
+    retry() {
+        const miniGame = this.miniGames[this.currentGameIndex];
+        console.log(`Retrying minigame: ${miniGame.key}`);
+        this.game.scene.start(miniGame.key);
+    }
+
+    /**
+     * 次のミニゲームへ進む
+     */
+    next() {
+        this.currentGameIndex++;
+        this.startNextMiniGame();
+    }
+
+    /**
      * 最終結果表示
      */
     showFinalResult() {
@@ -108,13 +137,15 @@ class GameManager {
         console.log(`Total: ${this.totalGames}`);
         console.log(`Success: ${this.successCount}`);
         console.log(`Fail: ${this.failCount}`);
+        console.log(`Lives Remaining: ${this.lives}`);
         console.log('====================');
 
-        // TODO: 結果画面シーンを作成して遷移
-        // 現在は再スタート
-        setTimeout(() => {
-            this.startGame();
-        }, 3000);
+        // ゲームオーバーシーンへ遷移
+        const currentMiniGame = this.miniGames[this.currentGameIndex];
+        if (currentMiniGame) {
+            this.game.scene.stop(currentMiniGame.key);
+        }
+        this.game.scene.start('GameOverScene');
     }
 
     /**
@@ -126,6 +157,7 @@ class GameManager {
             total: this.totalGames,
             success: this.successCount,
             fail: this.failCount,
+            lives: this.lives,
         };
     }
 
@@ -137,6 +169,7 @@ class GameManager {
         this.totalGames = 0;
         this.successCount = 0;
         this.failCount = 0;
+        this.lives = 3;
     }
 }
 

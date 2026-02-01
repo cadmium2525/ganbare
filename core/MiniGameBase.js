@@ -115,13 +115,29 @@ class MiniGameBase extends Phaser.Scene {
         this.gameState = Constants.GAME_STATE.RESULT;
         this.inputManager.disable();
 
+        // 失敗時の処理
+        let isGameOver = false;
+        if (!success && window.gameManager) {
+            isGameOver = window.gameManager.reportFailure();
+        }
+
         // 結果表示
         this.showResult(success);
 
-        // 2秒後にリザルト画面へ
-        this.time.delayedCall(2000, () => {
-            this.goToResultScene(success);
-        });
+        // クライマックスまたは通常のリザルト画面へ
+        if (isGameOver) {
+            // ゲームオーバーの場合は少し待ってから最終結果へ
+            this.time.delayedCall(2000, () => {
+                if (window.gameManager) {
+                    window.gameManager.showFinalResult();
+                }
+            });
+        } else {
+            // 通常のリザルト画面へ (継続可能)
+            this.time.delayedCall(2000, () => {
+                this.goToResultScene(success);
+            });
+        }
     }
 
     /**

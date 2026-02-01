@@ -14,6 +14,13 @@ const config = {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
     },
+    scene: [
+        TitleScene,
+        // GameManagerはシーンではないのでここには含めない
+        ResultScene,
+        GameOverScene, // ゲームオーバーシーン追加
+        // QuickCannonScene は GameManager.registerMiniGame で追加されるため削除
+    ],
     physics: {
         default: 'arcade',
         arcade: {
@@ -29,8 +36,8 @@ const game = new Phaser.Game(config);
 // GameManager初期化
 const gameManager = new GameManager(game);
 
-// リザルト画面を登録
-game.scene.add('ResultScene', ResultScene, false);
+// ResultSceneはconfigで追加済みなので手動追加不要
+// game.scene.add('ResultScene', ResultScene, false);
 
 // ミニゲーム登録
 gameManager.registerMiniGame('QuickCannonScene', QuickCannonScene);
