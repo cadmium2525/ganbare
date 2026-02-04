@@ -1,52 +1,29 @@
 /**
  * main.js
- * Phaserゲーム設定とエントリーポイント
+ * ゲームのメインエントリーポイント
  */
 
-// Phaser設定
+// ゲーム設定
 const config = {
     type: Phaser.AUTO,
-    width: Constants.GAME.WIDTH,
-    height: Constants.GAME.HEIGHT,
-    backgroundColor: Constants.GAME.BACKGROUND_COLOR,
+    width: 750,
+    height: 1334,
+    backgroundColor: '#2d5016', // 黒板のような緑色
     parent: 'game-container',
     scale: {
         mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
+        autoCenter: Phaser.Scale.CENTER_BOTH
     },
+    // ここでシーンを登録（読み込み順序に注意）
+    // TitleScene, ResultScene, GameOverScene, QuickCannonSceneなどは
+    // 後ほど各ファイルを作成してクラス定義を行う必要があります。
     scene: [
         TitleScene,
-        // GameManagerはシーンではないのでここには含めない
         ResultScene,
-        GameOverScene, // ゲームオーバーシーン追加
-        // QuickCannonScene は GameManager.registerMiniGame で追加されるため削除
-    ],
-    physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 0 },
-            debug: false,
-        },
-    },
+        GameOverScene,
+        QuickCannonScene
+    ]
 };
 
-// Phaserゲームインスタンス作成
+// ゲームインスタンスの作成
 const game = new Phaser.Game(config);
-
-// GameManager初期化
-const gameManager = new GameManager(game);
-
-// ResultSceneはconfigで追加済みなので手動追加不要
-// game.scene.add('ResultScene', ResultScene, false);
-
-// ミニゲーム登録
-gameManager.registerMiniGame('QuickCannonScene', QuickCannonScene);
-
-// TODO: 将来的に他のミニゲームを追加
-// gameManager.registerMiniGame('AnotherMiniGame', AnotherMiniGameScene);
-
-// ゲーム開始
-window.addEventListener('load', () => {
-    console.log('Game loaded. Starting...');
-    gameManager.startGame();
-});

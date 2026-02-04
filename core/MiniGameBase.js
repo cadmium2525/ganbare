@@ -1,198 +1,97 @@
 /**
  * MiniGameBase.js
- * 全ミニゲーム共通の基底クラス
- * 
- * 【重要】このファイルは基盤コードです。
- * 将来的に他のAIが勝手に修正しないことを前提としています。
+ * 全ミニゲームの親クラス
+ * 共通の初期化処理、終了処理などを管理
  */
-
 class MiniGameBase extends Phaser.Scene {
-    constructor(config) {
-        super(config);
-
-        // 共通プロパティ
-        this.gameState = Constants.GAME_STATE.READY;
-        this.soundManager = null;
-        this.inputManager = null;
-        this.startTime = 0;
-        this.timeLimit = Constants.MINIGAME.DEFAULT_TIME_LIMIT;
-
-        // UI要素
-        this.timerText = null;
-        this.messageText = null;
+    constructor(key) {
+        super({ key: key });
+        this.gameManager = GameManager.getInstance();
     }
 
-    /**
-     * Phaserのcreateメソッド
-     * 各ミニゲームでオーバーライド可能
-     */
+    init(data) {
+        // 前のシーンから引き継ぐデータがあればここで処理
+        this.retryMode = data ? data.retry : false;
+    }
+
     create() {
-        // マネージャーの初期化
-        this.soundManager = new SoundManager(this);
+        // 背景の表示（全ゲーム共通）
+        // 背景の表示（全ゲーム共通）
+        // 画面サイズに合わせてリサイズ
+        this.add.image(Constants.CENTER_X, Constants.CENTER_Y, Constants.ASSETS.BG)
+            .setDisplaySize(Constants.WIDTH, Constants.HEIGHT);
+
+        // ライフ表示
+        this.createLifeDisplay();
+
+        // ヘッダー仕切り線
+        // ライフの下に表示
+        this.add.image(Constants.CENTER_X, 100, 'line')
+            .setDisplaySize(Constants.WIDTH, 300)
+            .setDepth(100);
+
+        // スコア表示 (右上)
+        const scoreText = `Score: ${this.gameManager.score}`;
+        this.add.text(Constants.WIDTH - 20, 40, scoreText, {
+            font: '30px Arial',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(1, 0.5).setDepth(10);
+
+        // 共通コンポーネントの初期化
         this.inputManager = new InputManager(this);
+        this.soundManager = SoundManager.getInstance(this);
 
-        // シャットダウンイベントの登録
-        this.events.on('shutdown', this.shutdown, this);
-
-        // 共通UI作成
-        this.createCommonUI();
-
-        // ゲーム開始
-        this.start();
+        // ゲーム固有の初期化（サブクラスで実装）
+        this._create();
     }
 
-    /**
-     * 共通UIの作成
-     */
-    createCommonUI() {
-        const { WIDTH, HEIGHT } = Constants.GAME;
+    createLifeDisplay() {
+        const startX = 50; // 左上の開始位置
+        const startY = 50;
+        const spacing = 70; // 間隔をさらに広げる
 
-        // タイマー表示（右上）
-        this.timerText = this.add.text(WIDTH - 20, 20, '', {
-            fontSize: Constants.FONTS.SIZE_SMALL,
-            color: Constants.COLORS.CHALK_WHITE,
-            fontFamily: Constants.FONTS.MAIN,
-        });
-        this.timerText.setOrigin(1, 0);
-
-        // メッセージ表示（中央）
-        this.messageText = this.add.text(WIDTH / 2, HEIGHT / 2, '', {
-            fontSize: Constants.FONTS.SIZE_LARGE,
-            color: Constants.COLORS.CHALK_WHITE,
-            fontFamily: Constants.FONTS.MAIN,
-        });
-        this.messageText.setOrigin(0.5);
-    }
-
-    /**
-     * ゲーム開始
-     * 各ミニゲームで実装必須
-     */
-    start() {
-        this.gameState = Constants.GAME_STATE.PLAYING;
-        this.startTime = Date.now();
-        console.warn('MiniGameBase.start() should be overridden');
-    }
-
-    /**
-     * 更新処理
-     * @param {number} time - 経過時間
-     * @param {number} delta - 前フレームからの差分
-     */
-    update(time, delta) {
-        // タイマー更新
-        if (this.gameState === Constants.GAME_STATE.PLAYING) {
-            this.updateTimer();
+        for (let i = 0; i < this.gameManager.lives; i++) {
+            this.add.image(startX + (i * spacing), startY, Constants.ASSETS.LIFE)
+                .setScale(0.2) // 0.3の80%程度
+                .setDepth(10);
         }
     }
 
     /**
-     * タイマー更新
+     * サブクラスで実装すべきメインロジック開始
      */
-    updateTimer() {
-        const elapsed = (Date.now() - this.startTime) / 1000;
-        const remaining = Math.max(0, this.timeLimit - elapsed);
-
-        if (this.timerText) {
-            this.timerText.setText(`${remaining.toFixed(1)}s`);
-        }
-
-        // 時間切れ
-        if (remaining <= 0) {
-            this.finish(false);
-        }
+    _create() {
+        console.warn('MiniGameBase: _create() should be overridden');
     }
 
     /**
-     * ゲーム終了
-     * @param {boolean} success - 成功したかどうか
+     * ミニゲーム成功時の処理
      */
-    finish(success) {
-        if (this.gameState === Constants.GAME_STATE.RESULT) {
-            return; // 既に終了している
-        }
-
-        this.gameState = Constants.GAME_STATE.RESULT;
+    gameWin() {
         this.inputManager.disable();
+        this.gameManager.addScore();
 
-        // 失敗時の処理
-        let isGameOver = false;
-        if (!success && window.gameManager) {
-            isGameOver = window.gameManager.reportFailure();
-        }
-
-        // 結果表示
-        this.showResult(success);
-
-        // クライマックスまたは通常のリザルト画面へ
-        if (isGameOver) {
-            // ゲームオーバーの場合は少し待ってから最終結果へ
-            this.time.delayedCall(2000, () => {
-                if (window.gameManager) {
-                    window.gameManager.showFinalResult();
-                }
-            });
-        } else {
-            // 通常のリザルト画面へ (継続可能)
-            this.time.delayedCall(2000, () => {
-                this.goToResultScene(success);
-            });
-        }
+        // 少し待ってからリザルトへ
+        this.time.delayedCall(1500, () => {
+            this.scene.start(Constants.SCENES.RESULT, { success: true, sceneKey: this.scene.key });
+        });
     }
 
     /**
-     * 結果表示
-     * @param {boolean} success - 成功したかどうか
+     * ミニゲーム失敗時の処理
      */
-    showResult(success) {
-        if (this.messageText) {
-            this.messageText.setText(success ? '成功！' : '失敗...');
-            this.messageText.setColor(success ? Constants.COLORS.CHALK_YELLOW : Constants.COLORS.CHALK_RED);
-            this.messageText.setFontSize(Constants.FONTS.SIZE_LARGE);
-        }
+    gameLose() {
+        this.inputManager.disable();
+        const isGameOver = this.gameManager.decreaseLife();
 
-        // SE再生
-        const seKey = success ? 'se_success' : 'se_fail';
-        this.soundManager.playSE(seKey);
+        this.time.delayedCall(1500, () => {
+            if (isGameOver) {
+                this.scene.start(Constants.SCENES.GAMEOVER, { score: this.gameManager.score });
+            } else {
+                this.scene.start(Constants.SCENES.RESULT, { success: false, sceneKey: this.scene.key });
+            }
+        });
     }
-
-    /**
-     * リザルト画面へ遷移
-     * @param {boolean} success - 成功したかどうか
-     */
-    goToResultScene(success) {
-        // 現在のシーンを停止
-        this.scene.stop(this.scene.key);
-
-        // リザルト画面へ遷移
-        this.scene.start('ResultScene', { success: success });
-    }
-
-    /**
-     * 次のミニゲームへ遷移
-     * @param {boolean} success - 成功したかどうか
-     */
-    goToNextGame(success) {
-        // GameManagerに結果を通知
-        if (window.gameManager) {
-            window.gameManager.onMiniGameFinished(this.scene.key, success);
-        }
-    }
-
-    /**
-     * クリーンアップ
-     */
-    shutdown() {
-        if (this.soundManager) {
-            this.soundManager.destroy();
-        }
-        if (this.inputManager) {
-            this.inputManager.destroy();
-        }
-    }
-}
-
-// グローバルに公開
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = MiniGameBase;
 }
