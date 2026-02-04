@@ -225,6 +225,7 @@ class QuickCannonScene extends MiniGameBase {
             }
         } else {
             // お手つき
+            this.soundManager.stopBgm(); // BGM停止
             this.resolveRound(false, 'early');
         }
     }

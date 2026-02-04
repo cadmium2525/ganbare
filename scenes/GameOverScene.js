@@ -13,7 +13,8 @@ class GameOverScene extends Phaser.Scene {
 
     create() {
         // 背景（専用画像があればそれを使う）
-        this.add.image(Constants.CENTER_X, Constants.CENTER_Y, Constants.ASSETS.GAMEOVER);
+        this.add.image(Constants.CENTER_X, Constants.CENTER_Y, Constants.ASSETS.GAMEOVER)
+            .setDisplaySize(Constants.WIDTH, Constants.HEIGHT);
 
         const textY = Constants.HEIGHT * 0.7; // 画面下寄りに表示
 
