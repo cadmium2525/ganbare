@@ -50,7 +50,7 @@ class ResultScene extends Phaser.Scene {
             if (this.success) {
                 // 成功時：次のゲームへ（現在はQuickCannonのみなので同じゲームへ）
                 const nextScene = GameManager.getInstance().getNextMiniGame();
-                this.scene.start(nextScene);
+                this.scene.start(nextScene, { retry: false });
             } else {
                 // 失敗時：リトライ
                 // 失敗したゲームをもう一度

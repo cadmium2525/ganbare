@@ -38,6 +38,10 @@ class QuickCannonScene extends MiniGameBase {
         // UI
         this.load.image('fukidashi', path + 'characters/announcer/fukidashi.png');
 
+        // サムネイルと説明用アセット
+        this.load.image('qc_samune', path + 'samune.png');
+        this.load.audio('se_samune', 'assets/samune.mp3');
+
         // 音声
         this.load.audio('bgm_happytime', path + 'bgm/happytime.mp3');
         this.load.audio('se_explosion', path + 'se/explosion.mp3');
@@ -50,6 +54,61 @@ class QuickCannonScene extends MiniGameBase {
     }
 
     _create() {
+        if (this.retryMode) {
+            this.startGame();
+        } else {
+            this.showInstructions();
+        }
+    }
+
+    showInstructions() {
+        // サムネイル表示 (画面中央より少し上)
+        this.thumbnail = this.add.image(Constants.CENTER_X, Constants.CENTER_Y - 150, 'qc_samune').setScale(1.2);
+
+        // 説明文表示 (サムネの下)
+        const descriptionText = "ドラくんが「おちんぽ！」と発言した瞬間にボタンを押せ！";
+        this.instructionText = this.add.text(Constants.CENTER_X, Constants.CENTER_Y + (this.thumbnail.height / 2) + 40, descriptionText, {
+            font: '28px Arial',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4,
+            align: 'center',
+            wordWrap: { width: Constants.WIDTH - 40 }
+        }).setOrigin(0.5, 0);
+
+        // SE再生 (5秒だけ流す)
+        this.instructionSe = this.sound.add('se_samune');
+        this.instructionSe.play();
+
+        // 5秒後に停止するタイマー
+        this.seTimer = this.time.delayedCall(5000, () => {
+            if (this.instructionSe && this.instructionSe.isPlaying) {
+                this.instructionSe.stop();
+            }
+        });
+
+        // タップでゲーム開始イベント
+        this.inputManager.onTap(() => this.startGame());
+        this.inputManager.enable();
+    }
+
+    startGame() {
+        // インストラクション画面の片付け
+        if (this.instructionSe && this.instructionSe.isPlaying) {
+            this.instructionSe.stop();
+        }
+        if (this.seTimer) this.seTimer.remove();
+
+        if (this.thumbnail) this.thumbnail.destroy();
+        if (this.instructionText) this.instructionText.destroy();
+
+        // 誤タップ（連打）防止のため一時的に入力無効化 (リトライ時は即座に有効化しても良いが、統一しておく)
+        this.inputManager.disable();
+        this.time.delayedCall(500, () => {
+            this.inputManager.enable();
+        });
+
+        // ここから実際のゲーム初期化 (元の_createの内容)
         this.logic.start();
 
         // 足元のライン (QuickCannon専用)
@@ -146,16 +205,15 @@ class QuickCannonScene extends MiniGameBase {
             .setDepth(100);
 
         // BGM再生
-        // "Tap to Start"で開始しているのでユーザインタラクション済み
         this.soundManager.playBgm('bgm_happytime');
 
-        // タップイベント設定
+        // タップイベント設定 (ゲーム用)
         this.inputManager.onTap(() => this.onTap());
-        this.inputManager.enable();
 
         // ゲームループ開始
         this.startWaitLoop();
     }
+
 
     startWaitLoop() {
         // 次のアクションまでの待機時間を決定

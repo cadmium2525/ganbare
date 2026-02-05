@@ -61,6 +61,6 @@ class TitleScene extends Phaser.Scene {
 
         // 最初のミニゲームへ遷移
         const nextScene = GameManager.getInstance().getNextMiniGame();
-        this.scene.start(nextScene);
+        this.scene.start(nextScene, { retry: false });
     }
 }

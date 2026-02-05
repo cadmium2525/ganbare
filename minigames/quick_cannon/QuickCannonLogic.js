@@ -7,7 +7,7 @@ class QuickCannonLogic {
         this.state = 'INIT'; // INIT, WAIT, FEINT, FIRE, END
         this.feintCount = 0;
         // 定数
-        this.MIN_WAIT = 1000;
+        this.MIN_WAIT = 2000;
         this.MAX_WAIT = 3000;
         this.ENEMY_REACTION_TIME = 400; // 敵の反応速度(ms)
     }
@@ -25,8 +25,8 @@ class QuickCannonLogic {
      * @returns {string} 次のアクション 'FEINT' or 'FIRE'
      */
     decideNextAction() {
-        // 50%の確率でフェイント、ただしフェイントは最大2回まで
-        const isFeint = Math.random() < 0.5;
+        // 65%の確率でフェイント、ただしフェイントは最大10回まで
+        const isFeint = Math.random() < 0.65;
         if (isFeint && this.feintCount < 10) {
             this.feintCount++;
             return 'FEINT';
