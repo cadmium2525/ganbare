@@ -255,7 +255,7 @@ class QuickCannonScene extends MiniGameBase {
         this.logic.state = 'FIRE';
         this.fireStartTime = this.time.now;
 
-        this.soundManager.stopBgm(); // BGM停止
+        // this.soundManager.stopBgm(); // BGM停止 -> 削除: ターゲット表示時はBGMを止めない
         this.announcer.stop();
         this.announcer.setTexture('announcer_fire');
         this.commandText.setText('おちんぽ!');
@@ -284,12 +284,13 @@ class QuickCannonScene extends MiniGameBase {
             }
         } else {
             // お手つき
-            this.soundManager.stopBgm(); // BGM停止
+            // this.soundManager.stopBgm(); // BGM停止 -> 削除: resolveRoundで統一
             this.resolveRound(false, 'early');
         }
     }
 
     resolveRound(success, reason) {
+        this.soundManager.stopBgm(); // BGM停止 (ここで統一)
         this.logic.state = 'END';
         this.inputManager.disable();
 
