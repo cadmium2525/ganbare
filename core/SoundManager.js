@@ -7,7 +7,7 @@ class SoundManager {
     static instance = null;
 
     // 音量レベル定義: 0(Mute), 1(Low), 2(Mid), 3(High)
-    static VOLUME_LEVELS = [0.0, 0.3, 0.6, 1.0];
+    static VOLUME_LEVELS = [0.0, 0.2, 0.5, 1.0];
 
     constructor(scene) {
         if (SoundManager.instance) {
