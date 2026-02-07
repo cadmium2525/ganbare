@@ -17,7 +17,7 @@ class SoundManager {
         this.scene = scene;
         this.bgm = null;
 
-        this.currentVolumeLevel = 3; // デフォルトは最大音量
+        this.currentVolumeLevel = 0; // デフォルトはMute
         this.masterVolume = SoundManager.VOLUME_LEVELS[this.currentVolumeLevel];
     }
 
@@ -42,6 +42,10 @@ class SoundManager {
         this.masterVolume = SoundManager.VOLUME_LEVELS[this.currentVolumeLevel];
 
         // 再生中のBGMがあれば音量を即座に更新
+        if (this.scene.sound.context.state === 'suspended') {
+            this.scene.sound.context.resume();
+        }
+
         if (this.bgm && this.bgm.isPlaying) {
             const baseVolume = this.bgm.originalConfigVolume !== undefined ? this.bgm.originalConfigVolume : 0.5;
             this.bgm.setVolume(baseVolume * this.masterVolume);
