@@ -77,7 +77,8 @@ class QuickCannonScene extends MiniGameBase {
         }).setOrigin(0.5, 0);
 
         // SE再生 (5秒だけ流す)
-        this.instructionSe = this.sound.add('se_samune');
+        const sm = SoundManager.getInstance(this);
+        this.instructionSe = this.sound.add('se_samune', { volume: sm.masterVolume });
         this.instructionSe.play();
 
         // 5秒後に停止するタイマー
